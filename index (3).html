@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>에만추 — AI를 통한 만남 추구</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --coral: #FF7B6E;
+    --peach: #FFB4A2;
+    --warm: #FF9E8E;
+    --dark: #0D0D14;
+    --card: #16161F;
+    --card2: #1E1E2A;
+    --border: rgba(255,255,255,0.08);
+    --text: #F2F0EC;
+    --muted: rgba(242,240,236,0.5);
+    --green: #5EFFA3;
+    --amber: #FFD16B;
+  }
+
+  body {
+    background: var(--dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--text);
+    overflow-x: hidden;
+    padding: 2rem 1rem;
+  }
+
+  /* ── DESKTOP HEADER ── */
+  .site-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 2.5rem;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+    background: rgba(13,13,20,0.85);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .site-logo {
+    font-family: 'Gowun Dodum', serif;
+    font-size: 1.25rem;
+    letter-spacing: 0.05em;
+    color: var(--coral);
+  }
+  .site-badge {
+    font-size: 0.7rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(255,123,110,0.12);
+    border: 0.5px solid rgba(255,123,110,0.3);
+    color: var(--coral);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── STAGE ── */
+  .stage {
+    margin-top: 5rem;
+    display: flex;
+    gap: 4rem;
+    align-items: center;
+    justify-content: center;
+    max-width: 1100px;
+    width: 100%;
+  }
+
+  /* ── PHONE FRAME ── */
+  .phone-wrap {
+    position: relative;
+    flex-shrink: 0;
+  }
+  .phone {
+    width: 360px;
+    height: 720px;
+    background: #0A0A10;
+    border-radius: 44px;
+    border: 2px solid rgba(255,255,255,0.12);
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 6px rgba(255,255,255,0.04),
+      0 40px 80px rgba(0,0,0,0.8),
+      0 0 120px rgba(255,123,110,0.08);
+  }
+  .phone-notch {
+    position: absolute;
+    top: 0; left: 50%; transform: translateX(-50%);
+    width: 110px; height: 30px;
+    background: #0A0A10;
+    border-radius: 0 0 20px 20px;
+    z-index: 50;
+  }
+  .phone-bar {
+    position: absolute;
+    bottom: 12px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    z-index: 50;
+  }
+
+  /* ── SCREENS ── */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateX(20px);
+  }
+  .screen.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  .screen.exit {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 44px 20px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .status-right { display: flex; gap: 6px; align-items: center; }
+
+  /* ── NAV BAR ── */
+  .nav-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0 28px;
+    border-top: 0.5px solid var(--border);
+    background: var(--dark);
+    flex-shrink: 0;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.4;
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    transition: opacity 0.2s;
+  }
+  .nav-item.active { opacity: 1; color: var(--coral); }
+  .nav-dot {
+    width: 22px; height: 22px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .nav-item.active .nav-dot { background: rgba(255,123,110,0.15); }
+
+  /* ── SCROLL CONTENT ── */
+  .screen-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  .screen-content::-webkit-scrollbar { display: none; }
+
+  /* ═══════ SCREEN 1: SPLASH ═══════ */
+  .s-splash {
+    background: var(--dark);
+    justify-content: center;
+    align-items: center;
+    gap: 24px;
+    padding: 40px 28px;
+  }
+  .splash-glow {
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,123,110,0.25) 0%, transparent 70%);
+    display: flex; align-items: center; justify-content: center;
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.08); opacity: 1; }
+  }
+  .splash-icon {
+    width: 100px; height: 100px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, rgba(255,123,110,0.9), rgba(255,180,162,0.7));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+  }
+  .splash-title {
+    font-family: 'Gowun Dodum', serif;
+    font-size: 2.4rem;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    text-align: center;
+  }
+  .splash-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.8;
+    letter-spacing: 0.03em;
+  }
+  .splash-tag {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+    background: rgba(255,123,110,0.1);
+    border: 0.5px solid rgba(255,123,110,0.25);
+    color: var(--coral);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+  }
+  .btn-main {
+    width: 100%;
+    padding: 16px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--coral), var(--warm));
+    border: none;
+    color: white;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: transform 0.15s, opacity 0.15s;
+    margin-top: 8px;
+  }
+  .btn-main:active { transform: scale(0.97); opacity: 0.9; }
+  .btn-ghost {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid var(--border);
+    color: var(--muted);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.07); }
+
+  /* ═══════ SCREEN 2: ONBOARDING ═══════ */
+  .s-onboard { background: var(--dark); padding: 0; }
+  .onboard-header { padding: 16px 24px 12px; flex-shrink: 0; }
+  .onboard-title { font-size: 1.3rem; font-weight: 500; margin-bottom: 4px; }
+  .onboard-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.7; }
+  .progress-bar {
+    height: 2px;
+    background: rgba(255,255,255,0.06);
+    margin: 0 24px 20px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .progress-fill {
+    height: 100%; width: 40%;
+    background: linear-gradient(90deg, var(--coral), var(--peach));
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+  .section-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 0 24px 10px;
+  }
+  .tag-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 24px 20px;
+  }
+  .tag {
+    padding: 8px 14px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.05);
+    border: 0.5px solid var(--border);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+  }
+  .tag.sel {
+    background: rgba(255,123,110,0.15);
+    border-color: rgba(255,123,110,0.4);
+    color: var(--coral);
+  }
+  .divider { height: 0.5px; background: var(--border); margin: 4px 24px 16px; }
+
+  /* ═══════ SCREEN 3: AI WORLD ═══════ */
+  .s-world { background: var(--dark); }
+  .world-map-wrap {
+    margin: 8px 20px 16px;
+    height: 240px;
+    background: var(--card);
+    border-radius: 20px;
+    border: 0.5px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .map-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  .map-me {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--coral), var(--warm));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    z-index: 10;
+  }
+  .map-pulse {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,123,110,0.3);
+    animation: ripple 2.5s ease-out infinite;
+  }
+  .map-pulse2 {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,123,110,0.15);
+    animation: ripple 2.5s ease-out 0.8s infinite;
+  }
+  @keyframes ripple {
+    0% { transform: translate(-50%,-50%) scale(0.8); opacity: 0.8; }
+    100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+  }
+  .map-dot {
+    position: absolute;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--card2);
+    border: 1.5px solid rgba(255,180,162,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .map-dot:hover { transform: scale(1.1); }
+  .map-dot-label {
+    position: absolute;
+    bottom: -18px; left: 50%; transform: translateX(-50%);
+    font-size: 8px;
+    color: var(--peach);
+    white-space: nowrap;
+  }
+  .nearby-pill {
+    position: absolute;
+    top: 12px; right: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: rgba(94,255,163,0.12);
+    border: 0.5px solid rgba(94,255,163,0.3);
+    color: var(--green);
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .profile-row {
+    display: flex;
+    gap: 10px;
+    padding: 0 20px 12px;
+  }
+  .profile-card-mini {
+    flex: 1;
+    background: var(--card);
+    border-radius: 16px;
+    border: 0.5px solid var(--border);
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .profile-card-mini:hover { border-color: rgba(255,123,110,0.3); transform: translateY(-1px); }
+  .profile-card-mini:active { transform: scale(0.98); }
+  .pcm-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    background: rgba(255,255,255,0.06);
+  }
+  .pcm-name { font-size: 0.82rem; font-weight: 500; margin-bottom: 2px; }
+  .pcm-dist { font-size: 0.7rem; color: var(--green); }
+  .pcm-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .pcm-tag {
+    font-size: 0.6rem;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    color: var(--muted);
+  }
+
+  /* ═══════ SCREEN 4: NOTIFICATION ═══════ */
+  .s-notif { background: var(--dark); }
+  .notif-banner {
+    margin: 12px 20px;
+    background: var(--card);
+    border-radius: 18px;
+    border: 0.5px solid rgba(255,123,110,0.2);
+    overflow: hidden;
+    animation: slide-in 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes slide-in {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .notif-top {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .notif-app-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--coral), var(--warm));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .notif-app-name { font-size: 0.72rem; color: var(--muted); font-weight: 500; }
+  .notif-time { font-size: 0.68rem; color: var(--muted); margin-left: auto; }
+  .notif-body { padding: 0 16px 16px; }
+  .notif-title { font-size: 0.9rem; font-weight: 500; margin-bottom: 4px; }
+  .notif-text { font-size: 0.78rem; color: var(--muted); line-height: 1.6; }
+  .notif-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .notif-btn-yes {
+    flex: 1; padding: 10px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--coral), var(--warm));
+    border: none;
+    color: white;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .notif-btn-no {
+    flex: 1; padding: 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 0.5px solid var(--border);
+    color: var(--muted);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .match-profile-card {
+    margin: 0 20px 12px;
+    background: var(--card);
+    border-radius: 20px;
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+  }
+  .match-profile-top {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .match-avatar {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 2px solid rgba(255,123,110,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+  .match-name { font-size: 1.05rem; font-weight: 500; }
+  .match-info { font-size: 0.75rem; color: var(--muted); margin-top: 2px; line-height: 1.6; }
+  .match-compat {
+    margin-left: auto;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .compat-num {
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--coral), var(--peach));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .compat-label { font-size: 0.65rem; color: var(--muted); }
+  .match-worlds {
+    padding: 0 20px 16px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .world-badge {
+    padding: 5px 11px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+  }
+  .wb-coral { background: rgba(255,123,110,0.12); border: 0.5px solid rgba(255,123,110,0.25); color: var(--coral); }
+  .wb-amber { background: rgba(255,209,107,0.1); border: 0.5px solid rgba(255,209,107,0.25); color: var(--amber); }
+  .wb-green { background: rgba(94,255,163,0.1); border: 0.5px solid rgba(94,255,163,0.25); color: var(--green); }
+  .match-reason {
+    margin: 0 20px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.03);
+    border-radius: 12px;
+    border: 0.5px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .match-reason span { color: var(--coral); }
+
+  /* ═══════ SCREEN 5: DOTOR ═══════ */
+  .s-dotor { background: var(--dark); }
+  .dotor-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px;
+  }
+  .back-btn {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer;
+    color: var(--text); flex-shrink: 0;
+  }
+  .dotor-name { font-size: 1rem; font-weight: 500; }
+  .online-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+    animation: blink 2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+  .chat-area { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .chat-area::-webkit-scrollbar { display: none; }
+  .chat-sys {
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--muted);
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 10px;
+    align-self: center;
+  }
+  .msg-wrap { display: flex; gap: 8px; align-items: flex-end; }
+  .msg-wrap.me { justify-content: flex-end; }
+  .msg-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .msg-bubble {
+    max-width: 220px;
+    padding: 10px 13px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+  .msg-bubble.them {
+    background: var(--card2);
+    border: 0.5px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 6px;
+  }
+  .msg-bubble.me {
+    background: linear-gradient(135deg, var(--coral), var(--warm));
+    color: white;
+    border-bottom-right-radius: 6px;
+  }
+  .msg-time { font-size: 0.62rem; color: var(--muted); margin-bottom: 2px; }
+
+  .dotor-signal-area {
+    padding: 14px 20px;
+    border-top: 0.5px solid var(--border);
+  }
+  .signal-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; text-align: center; }
+  .signal-row { display: flex; gap: 8px; }
+  .signal-acorn {
+    flex: 1;
+    padding: 12px 8px;
+    border-radius: 14px;
+    background: var(--card2);
+    border: 0.5px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .signal-acorn:hover { border-color: rgba(255,123,110,0.3); }
+  .signal-acorn .s-icon { font-size: 20px; }
+  .signal-acorn .s-text { font-size: 0.62rem; color: var(--muted); text-align: center; }
+  .signal-acorn.big {
+    background: rgba(255,123,110,0.1);
+    border-color: rgba(255,123,110,0.3);
+  }
+  .signal-acorn.big .s-text { color: var(--coral); }
+
+  /* ═══════ SCREEN 6: SUCCESS ═══════ */
+  .s-success {
+    background: var(--dark);
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 40px 28px;
+  }
+  .success-ring {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(94,255,163,0.08);
+    border: 2px solid rgba(94,255,163,0.2);
+    display: flex; align-items: center; justify-content: center;
+    animation: success-pop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes success-pop {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .success-inner {
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: rgba(94,255,163,0.12);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+  }
+  .success-title { font-size: 1.4rem; font-weight: 500; text-align: center; }
+  .success-sub { font-size: 0.8rem; color: var(--muted); text-align: center; line-height: 1.8; }
+  .mutual-row { display: flex; gap: 8px; align-items: center; }
+  .mutual-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .mutual-line {
+    flex: 1; height: 1.5px;
+    background: linear-gradient(90deg, rgba(255,123,110,0.4), rgba(94,255,163,0.4));
+  }
+  .coupon-card {
+    width: 100%;
+    background: var(--card);
+    border-radius: 18px;
+    border: 0.5px solid rgba(255,209,107,0.2);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .coupon-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: rgba(255,209,107,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .coupon-title { font-size: 0.85rem; font-weight: 500; }
+  .coupon-sub { font-size: 0.72rem; color: var(--amber); margin-top: 2px; }
+
+  /* ── SIDE PANEL ── */
+  .side-panel {
+    max-width: 380px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .panel-title {
+    font-family: 'Gowun Dodum', serif;
+    font-size: 2rem;
+    letter-spacing: 0.05em;
+    line-height: 1.3;
+    color: var(--text);
+  }
+  .panel-title em {
+    background: linear-gradient(135deg, var(--coral), var(--peach));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-style: normal;
+  }
+  .panel-sub { font-size: 0.88rem; color: var(--muted); line-height: 1.8; }
+  .step-list { display: flex; flex-direction: column; gap: 12px; }
+  .step-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    opacity: 0.4;
+    transition: opacity 0.3s;
+  }
+  .step-item.current { opacity: 1; }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 0.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-item.current .step-num {
+    background: rgba(255,123,110,0.15);
+    border-color: rgba(255,123,110,0.4);
+    color: var(--coral);
+  }
+  .step-text .st-title { font-size: 0.88rem; font-weight: 500; }
+  .step-text .st-desc { font-size: 0.75rem; color: var(--muted); margin-top: 2px; line-height: 1.6; }
+
+  .skt-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .skt-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--coral); }
+
+  .nav-dots {
+    display: flex; gap: 6px; align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+  }
+  .nav-dot-ind {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .nav-dot-ind.active {
+    width: 20px; border-radius: 3px;
+    background: var(--coral);
+  }
+
+  @media (max-width: 900px) {
+    .side-panel { display: none; }
+    .stage { margin-top: 4.5rem; }
+  }
+  @media (max-width: 420px) {
+    .phone { width: 340px; height: 680px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-logo">에만추</div>
+  <span class="site-badge">AX Challenge 2026</span>
+</header>
+
+<div class="stage">
+
+  <!-- PHONE -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-notch"></div>
+      <div class="phone-bar"></div>
+
+      <!-- SCREEN 1: SPLASH -->
+      <div class="screen s-splash active" id="s1">
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:40px 32px;">
+          <div class="splash-glow">
+            <div class="splash-icon" style="background:none; overflow:visible;">
+<svg width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialGradient id="c1" cx="36%" cy="30%" r="68%">
+<stop offset="0%" stop-color="#FFE4DA"/>
+<stop offset="50%" stop-color="#FF8B7A"/>
+<stop offset="100%" stop-color="#D44E3C"/>
+</radialGradient>
+<radialGradient id="c2" cx="36%" cy="30%" r="68%">
+<stop offset="0%" stop-color="#EDE0FF"/>
+<stop offset="50%" stop-color="#B090E0"/>
+<stop offset="100%" stop-color="#7B5CB8"/>
+</radialGradient>
+<radialGradient id="midglow" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#FFCE60" stop-opacity="0.9"/>
+<stop offset="60%" stop-color="#FF9E6A" stop-opacity="0.4"/>
+<stop offset="100%" stop-color="#FF9E6A" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="sh1" cx="65%" cy="70%" r="55%">
+<stop offset="0%" stop-color="#B83828" stop-opacity="0.28"/>
+<stop offset="100%" stop-color="#B83828" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="sh2" cx="65%" cy="70%" r="55%">
+<stop offset="0%" stop-color="#5A3C98" stop-opacity="0.28"/>
+<stop offset="100%" stop-color="#5A3C98" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<!-- ground shadows -->
+<ellipse cx="30" cy="86" rx="17" ry="5" fill="rgba(0,0,0,0.13)"/>
+<ellipse cx="80" cy="86" rx="17" ry="5" fill="rgba(0,0,0,0.13)"/>
+<!-- center glow -->
+<circle cx="55" cy="58" r="18" fill="url(#midglow)"/>
+<!-- ── LEFT CHARACTER (coral) leaning right ── -->
+<g transform="translate(30,60) rotate(10)">
+<circle cx="0" cy="-4" r="21" fill="url(#c1)"/>
+<circle cx="0" cy="-4" r="21" fill="url(#sh1)"/>
+<!-- shine -->
+<ellipse cx="-8" cy="-13" rx="8" ry="5.5" fill="rgba(255,255,255,0.38)"/>
+<!-- eyes closed-happy (curved lines) -->
+<path d="M -8 -7 Q -5.5 -4 -3 -7" stroke="#7A2018" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M 3 -7 Q 5.5 -4 8 -7" stroke="#7A2018" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<!-- blush -->
+<ellipse cx="-13" cy="-1" rx="5.5" ry="3.5" fill="rgba(220,70,50,0.22)"/>
+<ellipse cx="13" cy="-1" rx="5.5" ry="3.5" fill="rgba(220,70,50,0.22)"/>
+<!-- smile -->
+<path d="M -8 3 Q 0 9.5 8 3" stroke="#B03828" stroke-width="2" fill="none" stroke-linecap="round"/>
+</g>
+<!-- ── RIGHT CHARACTER (lavender) leaning left ── -->
+<g transform="translate(80,60) rotate(-10)">
+<circle cx="0" cy="-4" r="21" fill="url(#c2)"/>
+<circle cx="0" cy="-4" r="21" fill="url(#sh2)"/>
+<!-- shine -->
+<ellipse cx="-8" cy="-13" rx="8" ry="5.5" fill="rgba(255,255,255,0.38)"/>
+<!-- eyes closed-happy -->
+<path d="M -8 -7 Q -5.5 -4 -3 -7" stroke="#3A2070" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<path d="M 3 -7 Q 5.5 -4 8 -7" stroke="#3A2070" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<!-- blush -->
+<ellipse cx="-13" cy="-1" rx="5.5" ry="3.5" fill="rgba(140,80,210,0.2)"/>
+<ellipse cx="13" cy="-1" rx="5.5" ry="3.5" fill="rgba(140,80,210,0.2)"/>
+<!-- smile -->
+<path d="M -8 3 Q 0 9.5 8 3" stroke="#6040B0" stroke-width="2" fill="none" stroke-linecap="round"/>
+</g>
+<!-- ── CENTER HEART ── -->
+<g transform="translate(55,46)">
+<path d="M 0,4 C -4,-5 -15,-5 -15,3 C -15,10 0,19 0,19 C 0,19 15,10 15,3 C 15,-5 4,-5 0,4 Z" fill="#FF7B6E"/>
+<path d="M -5,2 C -7,-1 -11,-1 -11,2" stroke="rgba(255,255,255,0.45)" stroke-width="2" fill="none" stroke-linecap="round"/>
+</g>
+<!-- ── SPARKLES ── -->
+<!-- top star 4-point -->
+<path d="M 55,7 L 57,13 L 63,13 L 58,17 L 60,23 L 55,19.5 L 50,23 L 52,17 L 47,13 L 53,13 Z" fill="#FFD16B" opacity="0.88"/>
+<!-- small star top-left -->
+<path d="M 14,32 L 15,35 L 18,35 L 15.5,37 L 16.5,40 L 14,38 L 11.5,40 L 12.5,37 L 10,35 L 13,35 Z" fill="#FFD16B" opacity="0.72"/>
+<!-- small star top-right -->
+<path d="M 96,22 L 97,25 L 100,25 L 97.5,27 L 98.5,30 L 96,28 L 93.5,30 L 94.5,27 L 92,25 L 95,25 Z" fill="#C0A0F0" opacity="0.78"/>
+<!-- dot accents -->
+<circle cx="7" cy="55" r="3" fill="#FF9E8E" opacity="0.55"/>
+<circle cx="103" cy="48" r="2.5" fill="#B090E0" opacity="0.5"/>
+<circle cx="55" cy="103" r="2.5" fill="#FFD16B" opacity="0.45"/>
+<circle cx="18" cy="78" r="1.8" fill="#FFDDD6" opacity="0.5"/>
+<circle cx="94" cy="74" r="1.8" fill="#D4BCFF" opacity="0.5"/>
+</svg>
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <div class="splash-title">에만추</div>
+            <div style="font-size:0.72rem; color:var(--muted); margin-top:4px; letter-spacing:0.08em;">AI를 통한 만남 추구</div>
+          </div>
+          <span class="splash-tag">SKT AI Relationship Agent</span>
+          <div class="splash-sub">
+            우연의 첫 단추,<br>이제 AI가 끼워드립니다.<br><br>
+            자만추와 인만추 사이,<br><em style="font-style:normal; color:var(--coral);">에만추</em>를 경험해보세요.
+          </div>
+        </div>
+        <div style="padding:0 28px 40px; display:flex; flex-direction:column; gap:10px;">
+          <button class="btn-main" onclick="goScreen(2)">시작하기</button>
+          <button class="btn-ghost" onclick="goScreen(6)">이미 계정이 있어요</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: ONBOARDING -->
+      <div class="screen" id="s2">
+        <div class="status-bar">
+          <span>9:41</span>
+          <div class="status-right"><span>SKT</span><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div class="onboard-header">
+          <div style="font-size:0.7rem; color:var(--coral); letter-spacing:0.1em; margin-bottom:6px;">AI WORLD 생성 중 · 2/5</div>
+          <div class="onboard-title">나의 취향을<br>알려주세요</div>
+          <div class="onboard-desc">AI가 당신의 세계관을 만듭니다</div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:40%"></div></div>
+        <div class="screen-content">
+          <div class="section-label">☕ 자주 가는 공간</div>
+          <div class="tag-grid" id="tags-place">
+            <span class="tag sel" onclick="toggleTag(this)">카페</span>
+            <span class="tag sel" onclick="toggleTag(this)">전시관</span>
+            <span class="tag" onclick="toggleTag(this)">헬스장</span>
+            <span class="tag" onclick="toggleTag(this)">서점</span>
+            <span class="tag" onclick="toggleTag(this)">공원</span>
+            <span class="tag sel" onclick="toggleTag(this)">팝업</span>
+            <span class="tag" onclick="toggleTag(this)">영화관</span>
+          </div>
+          <div class="divider"></div>
+          <div class="section-label">🎵 음악 취향</div>
+          <div class="tag-grid">
+            <span class="tag sel" onclick="toggleTag(this)">인디</span>
+            <span class="tag" onclick="toggleTag(this)">R&amp;B</span>
+            <span class="tag sel" onclick="toggleTag(this)">재즈</span>
+            <span class="tag" onclick="toggleTag(this)">팝</span>
+            <span class="tag" onclick="toggleTag(this)">힙합</span>
+            <span class="tag" onclick="toggleTag(this)">클래식</span>
+          </div>
+          <div class="divider"></div>
+          <div class="section-label">🌿 라이프스타일</div>
+          <div class="tag-grid">
+            <span class="tag" onclick="toggleTag(this)">러닝</span>
+            <span class="tag sel" onclick="toggleTag(this)">독서</span>
+            <span class="tag sel" onclick="toggleTag(this)">요리</span>
+            <span class="tag" onclick="toggleTag(this)">요가</span>
+            <span class="tag" onclick="toggleTag(this)">클라이밍</span>
+            <span class="tag" onclick="toggleTag(this)">사진</span>
+            <span class="tag sel" onclick="toggleTag(this)">반려견</span>
+          </div>
+          <div style="height:16px;"></div>
+        </div>
+        <div style="padding:12px 20px 28px;">
+          <button class="btn-main" onclick="goScreen(3)">AI WORLD 생성하기 →</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 3: MAP / HOME -->
+      <div class="screen" id="s3">
+        <div class="status-bar">
+          <span>9:41</span>
+          <div class="status-right"><span>SKT</span><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div style="padding:0 20px 12px; display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="font-size:0.7rem; color:var(--muted);">지금 이 순간</div>
+            <div style="font-size:1.1rem; font-weight:500;">근처의 만추 <span style="color:var(--coral);">3명</span></div>
+          </div>
+          <div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.06); border:0.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:18px;">🔔</div>
+        </div>
+
+        <div class="world-map-wrap">
+          <div class="map-grid"></div>
+          <div class="map-pulse"></div>
+          <div class="map-pulse2"></div>
+          <div class="map-me">🧑</div>
+          <div class="map-dot" style="top:25%; left:30%;" onclick="goScreen(4)">
+            👩
+            <div class="map-dot-label">14m</div>
+          </div>
+          <div class="map-dot" style="top:60%; left:72%;">
+            🧑‍🦱
+            <div class="map-dot-label">38m</div>
+          </div>
+          <div class="map-dot" style="top:18%; left:65%;">
+            👩‍🦰
+            <div class="map-dot-label">52m</div>
+          </div>
+          <div class="nearby-pill">● 실시간</div>
+        </div>
+
+        <div style="padding:0 20px 8px; font-size:0.7rem; color:var(--muted);">결이 맞는 만추</div>
+        <div class="profile-row">
+          <div class="profile-card-mini" onclick="goScreen(4)">
+            <div class="pcm-avatar">👩</div>
+            <div class="pcm-name">지수 · 26</div>
+            <div class="pcm-dist">● 14m</div>
+            <div class="pcm-tags">
+              <span class="pcm-tag">카페</span>
+              <span class="pcm-tag">재즈</span>
+              <span class="pcm-tag">독서</span>
+            </div>
+          </div>
+          <div class="profile-card-mini" onclick="goScreen(4)">
+            <div class="pcm-avatar">🧑‍🦱</div>
+            <div class="pcm-name">민준 · 28</div>
+            <div class="pcm-dist">● 38m</div>
+            <div class="pcm-tags">
+              <span class="pcm-tag">전시</span>
+              <span class="pcm-tag">인디</span>
+            </div>
+          </div>
+          <div class="profile-card-mini" onclick="goScreen(4)">
+            <div class="pcm-avatar">👩‍🦰</div>
+            <div class="pcm-name">하은 · 27</div>
+            <div class="pcm-dist">● 52m</div>
+            <div class="pcm-tags">
+              <span class="pcm-tag">요리</span>
+              <span class="pcm-tag">팝업</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin:4px 20px; padding:12px 14px; background:var(--card); border-radius:14px; border:0.5px solid rgba(255,209,107,0.2); display:flex; align-items:center; gap:10px;">
+          <span style="font-size:20px;">☕</span>
+          <div>
+            <div style="font-size:0.78rem; font-weight:500;">T day 1+1 쿠폰 도착</div>
+            <div style="font-size:0.7rem; color:var(--amber);">아티제 · 오늘만 · 근처 만추와 함께</div>
+          </div>
+          <span style="margin-left:auto; font-size:0.7rem; color:var(--coral); cursor:pointer;" onclick="goScreen(5)">보기 →</span>
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-item"><div class="nav-dot">🗺️</div><span>주변</span></div>
+          <div class="nav-item active"><div class="nav-dot">✨</div><span>만추</span></div>
+          <div class="nav-item"><div class="nav-dot">💬</div><span>연결</span></div>
+          <div class="nav-item"><div class="nav-dot">✨</div><span>나의 결</span></div>
+        </div>
+      </div>
+
+      <!-- SCREEN 4: MATCH NOTIFICATION -->
+      <div class="screen" id="s4">
+        <div class="status-bar">
+          <span>9:41</span>
+          <div class="status-right"><span>SKT</span><span>●●●</span><span>🔋</span></div>
+        </div>
+
+        <div class="notif-banner">
+          <div class="notif-top">
+            <div class="notif-app-icon" style="font-size:16px;">🫶</div>
+            <div>
+              <div class="notif-app-name">에만추</div>
+            </div>
+            <div class="notif-time">방금</div>
+          </div>
+          <div class="notif-body">
+            <div class="notif-title">💫 지금 근방 14m에 만추가 있어요!</div>
+            <div class="notif-text">당신과 결이 닮은 만추를 발견했어요. 단추를 보내볼까요?</div>
+            <div class="notif-actions">
+              <button class="notif-btn-yes" onclick="goScreen(5)">도토리 보내기 🌰</button>
+              <button class="notif-btn-no" onclick="goScreen(3)">나중에</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="match-profile-card">
+          <div class="match-profile-top">
+            <div class="match-avatar">👩</div>
+            <div>
+              <div class="match-name">지수</div>
+              <div class="match-info">26세 · 마케터<br>성수동 거주 · 현재 위치: 14m</div>
+            </div>
+            <div class="match-compat">
+              <div class="compat-num">87%</div>
+              <div class="compat-label">결 유사도</div>
+            </div>
+          </div>
+          <div class="match-worlds">
+            <span class="world-badge wb-coral">☕ 카페 덕후</span>
+            <span class="world-badge wb-amber">🎵 재즈 애호가</span>
+            <span class="world-badge wb-green">📚 주말 독서</span>
+            <span class="world-badge wb-coral">🐶 반려견</span>
+            <span class="world-badge wb-amber">🎨 전시 자주</span>
+          </div>
+        </div>
+
+        <div class="match-reason">
+          <span>AI 분석</span> · 두 분 모두 <span>연남동 카페골목</span>을 자주 찾아요. 오늘도 같은 공간에 있어요. 지난주엔 같은 <span>전시</span>를 다녀온 것 같네요. 음악 취향도 <span>인디·재즈</span>로 겹쳐요. ✨
+        </div>
+
+        <div style="padding:0 20px 12px; display:flex; gap:8px;">
+          <button class="btn-main" onclick="goScreen(5)" style="flex:2;">도토리 보내기 🌰</button>
+          <button class="btn-ghost" style="flex:1;" onclick="goScreen(3)">패스</button>
+        </div>
+
+        <div class="nav-bar">
+          <div class="nav-item"><div class="nav-dot">🗺️</div><span>주변</span></div>
+          <div class="nav-item active"><div class="nav-dot">✨</div><span>만추</span></div>
+          <div class="nav-item"><div class="nav-dot">💬</div><span>연결</span></div>
+          <div class="nav-item"><div class="nav-dot">✨</div><span>나의 결</span></div>
+        </div>
+      </div>
+
+      <!-- SCREEN 5: DOTOR CHAT -->
+      <div class="screen" id="s5" style="display:flex; flex-direction:column;">
+        <div class="status-bar">
+          <span>9:41</span>
+          <div class="status-right"><span>SKT</span><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div class="dotor-header">
+          <div class="back-btn" onclick="goScreen(4)">←</div>
+          <div class="match-avatar" style="width:40px; height:40px; font-size:20px; flex-shrink:0;">👩</div>
+          <div>
+            <div class="dotor-name">지수</div>
+            <div style="font-size:0.68rem; color:var(--muted);">AI가 연결 · SKT 인증 완료</div>
+          </div>
+          <div class="online-dot" style="margin-left:auto;"></div>
+        </div>
+
+        <div class="chat-area" style="flex:1; display:flex; flex-direction:column; gap:12px; overflow-y:auto;">
+          <div class="chat-sys">에만추가 두 분을 연결했어요 ✨</div>
+
+          <div class="msg-wrap">
+            <div class="msg-avatar">👩</div>
+            <div>
+              <div class="msg-time">오전 9:38</div>
+              <div class="msg-bubble them">안녕하세요! 저도 방금 연락 와서 깜짝 놀랐어요 😅</div>
+            </div>
+          </div>
+
+          <div class="msg-wrap me">
+            <div>
+              <div class="msg-bubble me">저도요 ㅎㅎ 지금 이 카페에 계세요?</div>
+            </div>
+            <div class="msg-avatar">🧑</div>
+          </div>
+
+          <div class="msg-wrap">
+            <div class="msg-avatar">👩</div>
+            <div>
+              <div class="msg-bubble them">네 지금 창가 쪽에 있어요. 혹시 1+1 쿠폰 받으셨어요? 🙈</div>
+            </div>
+          </div>
+
+          <div style="padding:10px 14px; background:rgba(255,209,107,0.08); border-radius:14px; border:0.5px solid rgba(255,209,107,0.2);">
+            <div style="font-size:0.72rem; color:var(--amber); margin-bottom:6px;">☕ T day 쿠폰 · 지금 사용 가능</div>
+            <div style="font-size:0.78rem; color:var(--text);">아티제 아메리카노 1+1 · 두 분이 함께 사용하면 돼요</div>
+            <div style="margin-top:8px; font-size:0.72rem; color:var(--muted);">만료 : 오늘 자정</div>
+          </div>
+
+          <div class="msg-wrap me">
+            <div>
+              <div class="msg-bubble me">받았어요! 같이 쓰면 좋겠는데, 잠깐 만나볼까요? 😊</div>
+            </div>
+            <div class="msg-avatar">🧑</div>
+          </div>
+        </div>
+
+        <div class="dotor-signal-area">
+          <div class="signal-label">🌰 도토리(시그널) 보내기</div>
+          <div class="signal-row">
+            <div class="signal-acorn big" onclick="goScreen(6)">
+              <span class="s-icon">🌰</span>
+              <span class="s-text">만나고<br>싶어요</span>
+            </div>
+            <div class="signal-acorn" onclick="goScreen(6)">
+              <span class="s-icon">☕</span>
+              <span class="s-text">커피<br>함께요</span>
+            </div>
+            <div class="signal-acorn" onclick="goScreen(6)">
+              <span class="s-icon">🎵</span>
+              <span class="s-text">취향이<br>통해요</span>
+            </div>
+            <div class="signal-acorn" onclick="goScreen(6)">
+              <span class="s-icon">✨</span>
+              <span class="s-text">그냥<br>인사만</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN 6: SUCCESS -->
+      <div class="screen s-success" id="s6">
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; padding:40px 32px;">
+          <div class="success-ring">
+            <div class="success-inner">🫶</div>
+          </div>
+          <div class="success-title">연결됐어요! 🎉</div>
+          <div class="success-sub">
+            지수님이 도토리를 받았어요.<br>
+            이제 오프라인 만남을 준비해보세요.
+          </div>
+
+          <div class="mutual-row">
+            <div class="mutual-avatar">🧑</div>
+            <div class="mutual-line"></div>
+            <div style="font-size:0.75rem; color:var(--coral); white-space:nowrap; padding:0 6px;">상호 수락 ✓</div>
+            <div class="mutual-line"></div>
+            <div class="mutual-avatar">👩</div>
+          </div>
+
+          <div class="coupon-card">
+            <div class="coupon-icon">☕</div>
+            <div>
+              <div class="coupon-title">아티제 1+1 쿠폰</div>
+              <div class="coupon-sub">T day · 오늘 자정까지 · 지금 사용하세요</div>
+            </div>
+            <div style="margin-left:auto; font-size:0.7rem; color:var(--muted); cursor:pointer;">사용 →</div>
+          </div>
+
+          <div style="width:100%; padding:14px; background:var(--card); border-radius:16px; border:0.5px solid var(--border);">
+            <div style="font-size:0.7rem; color:var(--muted); margin-bottom:8px; letter-spacing:0.08em;">📍 오프라인 만남 명분</div>
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <div style="font-size:0.78rem; display:flex; align-items:center; gap:8px;"><span>🎪</span>지금 이 카페에서 만나기</div>
+              <div style="font-size:0.78rem; display:flex; align-items:center; gap:8px; color:var(--muted);"><span>🎵</span>FLO 플레이리스트 공유</div>
+              <div style="font-size:0.78rem; display:flex; align-items:center; gap:8px; color:var(--muted);"><span>🐶</span>강아지 산책 같이 하기</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:0 28px 40px; display:flex; flex-direction:column; gap:10px;">
+          <button class="btn-main" onclick="goScreen(1)">처음으로 돌아가기</button>
+          <button class="btn-ghost" onclick="goScreen(3)">주변 더 보기</button>
+        </div>
+      </div>
+
+    </div><!-- /phone -->
+
+    <div class="nav-dots" style="margin-top:16px;">
+      <div class="nav-dot-ind active" id="dot-1" onclick="goScreen(1)"></div>
+      <div class="nav-dot-ind" id="dot-2" onclick="goScreen(2)"></div>
+      <div class="nav-dot-ind" id="dot-3" onclick="goScreen(3)"></div>
+      <div class="nav-dot-ind" id="dot-4" onclick="goScreen(4)"></div>
+      <div class="nav-dot-ind" id="dot-5" onclick="goScreen(5)"></div>
+      <div class="nav-dot-ind" id="dot-6" onclick="goScreen(6)"></div>
+    </div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+    <div>
+      <div class="panel-title">우연의 첫 단추,<br><em>AI가 끼워드립니다</em></div>
+      <div class="panel-sub" style="margin-top:12px;">
+        자만추는 하고 싶지만 기회가 없고,<br>
+        인만추는 피로한 당신을 위해.<br>
+        SKT 인프라 기반의 신뢰할 수 있는 연결 경험.
+      </div>
+    </div>
+
+    <div class="step-list" id="step-list">
+      <div class="step-item current" data-screen="1">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <div class="st-title">스플래시</div>
+          <div class="st-desc">에만추 서비스 소개 및 진입</div>
+        </div>
+      </div>
+      <div class="step-item" data-screen="2">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <div class="st-title">취향 온보딩</div>
+          <div class="st-desc">AI WORLD 생성을 위한 취향·라이프스타일 입력</div>
+        </div>
+      </div>
+      <div class="step-item" data-screen="3">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <div class="st-title">근처 만추 탐색</div>
+          <div class="st-desc">실시간 위치 기반 주변 매칭 현황 확인</div>
+        </div>
+      </div>
+      <div class="step-item" data-screen="4">
+        <div class="step-num">4</div>
+        <div class="step-text">
+          <div class="st-title">AI 매칭 알림</div>
+          <div class="st-desc">결 유사도 분석 및 오프라인 연결 제안</div>
+        </div>
+      </div>
+      <div class="step-item" data-screen="5">
+        <div class="step-num">5</div>
+        <div class="st-title">도토리 시그널</div>
+        <div class="step-text">
+          <div class="st-desc">채팅 및 도토리(시그널) 전송으로 의사 표현</div>
+        </div>
+      </div>
+      <div class="step-item" data-screen="6">
+        <div class="step-num">6</div>
+        <div class="step-text">
+          <div class="st-title">오프라인 연결</div>
+          <div class="st-desc">상호 수락 후 T 멤버십 쿠폰과 함께 현실 만남</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="skt-badge">
+        <div class="skt-dot"></div>
+        SKT TID 본인인증 · eSIM · T멤버십 · FLO 연동
+      </div>
+    </div>
+  </div>
+
+</div><!-- /stage -->
+
+<script>
+let current = 1;
+
+function goScreen(n) {
+  const prev = document.getElementById('s' + current);
+  const next = document.getElementById('s' + n);
+  if (!next || n === current) return;
+
+  prev.classList.remove('active');
+  prev.classList.add('exit');
+  setTimeout(() => prev.classList.remove('exit'), 400);
+
+  next.classList.add('active');
+  current = n;
+
+  document.querySelectorAll('.nav-dot-ind').forEach((d, i) => {
+    d.classList.toggle('active', i + 1 === n);
+  });
+
+  document.querySelectorAll('.step-item').forEach(s => {
+    s.classList.toggle('current', parseInt(s.dataset.screen) === n);
+  });
+}
+
+function toggleTag(el) {
+  el.classList.toggle('sel');
+}
+</script>
+</body>
+</html>
